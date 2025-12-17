@@ -92,14 +92,17 @@ impl LocalRedirector {
 ///
 /// - `handle_tcp_stream`: An async function that will be called for each new TCP `Stream`.
 /// - `handle_udp_stream`: An async function that will be called for each new UDP `Stream`.
+/// - `max_reconnect_attempts`: Maximum number of reconnection attempts. None (default) = unlimited retries, 0 = no reconnection (fail on first error)
 ///
 /// *Availability: Windows, Linux, and macOS*
 #[pyfunction]
+#[pyo3(signature = (handle_tcp_stream, handle_udp_stream, max_reconnect_attempts=None))]
 #[allow(unused_variables)]
 pub fn start_local_redirector(
     py: Python<'_>,
     handle_tcp_stream: PyObject,
     handle_udp_stream: PyObject,
+    max_reconnect_attempts: Option<u32>,
 ) -> PyResult<Bound<PyAny>> {
     #[cfg(windows)]
     {
@@ -138,7 +141,9 @@ pub fn start_local_redirector(
     #[cfg(target_os = "macos")]
     {
         let copy_task = macos::copy_redirector_app(&py)?;
-        let conf = MacosConf;
+        let conf = MacosConf {
+            max_reconnect_attempts,
+        };
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             if let Some(copy_task) = copy_task {
                 tokio::task::spawn_blocking(copy_task)

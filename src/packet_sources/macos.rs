@@ -31,13 +31,16 @@ use tokio::task::JoinSet;
 use tokio::time::timeout;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 
-pub struct MacosConf;
+#[derive(Default)]
+pub struct MacosConf {
+    pub max_reconnect_attempts: Option<u32>,
+}
 
 async fn start_redirector(listener_addr: String) -> Result<()> {
     log::debug!("Starting redirector app...");
     let redirector_process =
         Command::new("/Applications/Mitmproxy Redirector.app/Contents/MacOS/Mitmproxy Redirector")
-            .arg(listener_addr)
+            .arg(&listener_addr)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -84,25 +87,19 @@ impl PacketSourceConf for MacosConf {
         let listener_addr = format!("/tmp/mitmproxy-{}", std::process::id());
         let listener = UnixListener::bind(&listener_addr)?;
 
-        start_redirector(listener_addr).await?;
-
-        log::debug!("Waiting for control channel...");
-        // XXX: Saw some hangs here during development, not sure why.
-        let control_channel = timeout(Duration::new(5, 0), listener.accept())
-            .await
-            .context("failed to establish connection to macOS system extension")??
-            .0;
-        log::debug!("Control channel connected.");
+        start_redirector(listener_addr.clone()).await?;
 
         let (conf_tx, conf_rx) = unbounded_channel();
         Ok((
             MacOsTask {
-                control_channel,
                 listener,
+                listener_addr,
                 connections: JoinSet::new(),
                 transport_events_tx,
                 conf_rx,
+                current_intercept_conf: None,
                 shutdown,
+                max_reconnect_attempts: self.max_reconnect_attempts,
             },
             conf_tx,
         ))
@@ -110,25 +107,57 @@ impl PacketSourceConf for MacosConf {
 }
 
 pub struct MacOsTask {
-    control_channel: UnixStream,
     listener: UnixListener,
+    listener_addr: String,
     connections: JoinSet<Result<()>>,
     transport_events_tx: Sender<TransportEvent>,
     conf_rx: UnboundedReceiver<InterceptConf>,
+    current_intercept_conf: Option<InterceptConf>,
     shutdown: shutdown::Receiver,
+    max_reconnect_attempts: Option<u32>,
 }
 
 impl PacketSourceTask for MacOsTask {
     async fn run(mut self) -> Result<()> {
-        let mut control_channel = Framed::new(self.control_channel, LengthDelimitedCodec::new());
+        log::info!("Waiting for macOS System Extension to connect...");
+        let mut control_channel = self.reconnect_control_channel().await
+            .context("Failed to establish initial control channel")?;
 
         loop {
             tokio::select! {
                 // wait for graceful shutdown
                 _ = self.shutdown.recv() => break,
-                _ = control_channel.next() => {
-                    // No messages expected here at the moment.
-                    bail!("macOS System Extension shut down.")
+                msg = control_channel.next() => {
+                    let should_reconnect = if msg.is_none() {
+                        log::warn!("macOS System Extension control channel closed (EOF), reconnecting...");
+                        true
+                    } else if let Some(Err(e)) = msg.as_ref() {
+                        log::warn!("macOS System Extension control channel error: {e:?}, reconnecting...");
+                        true
+                    } else if let Some(Ok(data)) = msg {
+                        log::warn!("macOS System Extension control channel received unexpected data: {} bytes - reconnecting", data.len());
+                        true
+                    } else {
+                        false
+                    };
+
+                    if should_reconnect {
+                        control_channel = self.reconnect_control_channel().await
+                            .context("Failed to reconnect control channel")?;
+                        log::info!("Reconnected to macOS System Extension");
+
+                        // Resend stored intercept configuration to the newly connected extension
+                        if let Some(ref conf) = self.current_intercept_conf {
+                            let msg = ipc::InterceptConf::from(conf.clone()).encode_to_vec();
+                            if control_channel.send(Bytes::from(msg)).await.is_ok() {
+                                log::info!("Successfully resent intercept configuration to extension");
+                            } else {
+                                log::warn!("Failed to resend intercept config after reconnection");
+                            }
+                        } else {
+                            log::warn!("BUG: NO stored config! current_intercept_conf is None - extension will not intercept anything!");
+                        }
+                    }
                 },
                 Some(task) = self.connections.join_next() => {
                     match task {
@@ -152,14 +181,54 @@ impl PacketSourceTask for MacOsTask {
                 },
                 // pipe through changes to the intercept list
                 Some(conf) = self.conf_rx.recv() => {
+                    // Store the config for reconnection scenarios
+                    self.current_intercept_conf = Some(conf.clone());
                     let msg = ipc::InterceptConf::from(conf).encode_to_vec();
-                    control_channel.send(Bytes::from(msg)).await.context("Failed to write to control channel")?;
+                    if control_channel.send(Bytes::from(msg)).await.is_err() {
+                        log::warn!("Failed to send intercept config to macOS System Extension, control channel may be down");
+                        // Next iteration will detect disconnection and reconnect
+                    } else {
+                        log::debug!("Successfully sent config to extension via control_channel");
+                    }
                 },
             }
         }
 
         log::info!("Macos OS proxy task shutting down.");
         Ok(())
+    }
+}
+
+impl MacOsTask {
+    async fn reconnect_control_channel(&mut self) -> Result<Framed<UnixStream, LengthDelimitedCodec>> {
+        let mut delay = Duration::from_secs(1);
+        let mut attempts = 0u32;
+        loop {
+            tokio::time::sleep(delay).await;
+            attempts += 1;
+
+            if let Some(max) = self.max_reconnect_attempts {
+                if attempts > max {
+                    bail!("Failed to reconnect to macOS System Extension after {} attempts", max);
+                }
+            }
+
+            log::info!("Attempting to connect to macOS System Extension (attempt {}, waiting {}s)...", attempts, delay.as_secs());
+
+            // Tell the extension to connect by spawning the redirector app
+            if let Err(e) = start_redirector(self.listener_addr.clone()).await {
+                log::warn!("Failed to start redirector on attempt {}: {:?}", attempts, e);
+                // Continue with exponential backoff even if redirector fails
+            }
+
+            if let Ok(Ok((stream, _))) = timeout(Duration::from_secs(5), self.listener.accept()).await {
+                log::info!("Successfully connected to macOS System Extension");
+                return Ok(Framed::new(stream, LengthDelimitedCodec::new()));
+            }
+
+            // Exponential backoff with max 30 seconds delay
+            delay = (delay * 2).min(Duration::from_secs(30));
+        }
     }
 }
 
