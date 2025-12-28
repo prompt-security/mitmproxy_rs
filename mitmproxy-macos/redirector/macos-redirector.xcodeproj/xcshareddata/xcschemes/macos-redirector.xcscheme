@@ -15,7 +15,7 @@
                   <BuildableReference
                      BuildableIdentifier = "primary"
                      BlueprintIdentifier = "CE7A86A62A8CFB86009E0B82"
-                     BuildableName = "Mitmproxy Redirector.app"
+                     BuildableName = "Prompt Security Redirector.app"
                      BlueprintName = "macos-redirector"
                      ReferencedContainer = "container:macos-redirector.xcodeproj">
                   </BuildableReference>
@@ -33,7 +33,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CE7A86A62A8CFB86009E0B82"
-               BuildableName = "Mitmproxy Redirector.app"
+               BuildableName = "Prompt Security Redirector.app"
                BlueprintName = "macos-redirector"
                ReferencedContainer = "container:macos-redirector.xcodeproj">
             </BuildableReference>
@@ -60,13 +60,13 @@
       <PathRunnable
          runnableDebuggingMode = "0"
          BundleIdentifier = "org.mitmproxy.macos-redirector"
-         FilePath = "/Applications/Mitmproxy Redirector.app">
+         FilePath = "/Applications/Prompt Security Redirector.app">
       </PathRunnable>
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CE7A86A62A8CFB86009E0B82"
-            BuildableName = "Mitmproxy Redirector.app"
+            BuildableName = "Prompt Security Redirector.app"
             BlueprintName = "macos-redirector"
             ReferencedContainer = "container:macos-redirector.xcodeproj">
          </BuildableReference>
@@ -83,7 +83,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CE7A86A62A8CFB86009E0B82"
-            BuildableName = "Mitmproxy Redirector.app"
+            BuildableName = "Prompt Security Redirector.app"
             BlueprintName = "macos-redirector"
             ReferencedContainer = "container:macos-redirector.xcodeproj">
          </BuildableReference>

@@ -31,7 +31,7 @@ struct App {
     
     static func exitModal(_ message: String) {
         let notification = NSAlert()
-        notification.messageText = "Mitmproxy Redirector"
+        notification.messageText = "Prompt Security Redirector"
         notification.informativeText = message
         notification.runModal()
         exit(1)

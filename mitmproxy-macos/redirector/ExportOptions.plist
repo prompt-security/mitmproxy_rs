@@ -9,9 +9,9 @@
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>org.mitmproxy.macos-redirector</key>
-		<string>Mitmproxy Redirector</string>
+		<string>Prompt Security Redirector</string>
 		<key>org.mitmproxy.macos-redirector.network-extension</key>
-		<string>Mitmproxy Redirector Network Extension</string>
+		<string>Prompt Security Redirector Network Extension</string>
 	</dict>
 	<key>signingCertificate</key>
 	<string>89AACB17FA34CC93BE764A1024FAB6346155A439</string>

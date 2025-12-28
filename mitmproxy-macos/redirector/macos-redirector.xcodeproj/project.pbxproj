@@ -52,7 +52,7 @@
 		CE08B8BF2ABFB51900251C1C /* mitmproxy_ipc.pb.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = mitmproxy_ipc.pb.swift; sourceTree = "<group>"; };
 		CE3FDD7A2AAF1765007B7A3F /* ProcessInfoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessInfoCache.swift; sourceTree = "<group>"; };
 		CE415DF22AB33C6A0038F901 /* InterceptConf.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterceptConf.swift; sourceTree = "<group>"; };
-		CE7A86A72A8CFB86009E0B82 /* Mitmproxy Redirector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mitmproxy Redirector.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CE7A86A72A8CFB86009E0B82 /* Prompt Security Redirector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Prompt Security Redirector.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CE7A86AE2A8CFB87009E0B82 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE7A86B32A8CFB87009E0B82 /* macos_redirector.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = macos_redirector.entitlements; sourceTree = "<group>"; };
 		CE7A86BD2A8CFBAD009E0B82 /* org.mitmproxy.macos-redirector.network-extension.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = "org.mitmproxy.macos-redirector.network-extension.systemextension"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -107,7 +107,7 @@
 		CE7A86A82A8CFB86009E0B82 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CE7A86A72A8CFB86009E0B82 /* Mitmproxy Redirector.app */,
+				CE7A86A72A8CFB86009E0B82 /* Prompt Security Redirector.app */,
 				CE7A86BD2A8CFBAD009E0B82 /* org.mitmproxy.macos-redirector.network-extension.systemextension */,
 			);
 			name = Products;
@@ -180,7 +180,7 @@
 				CE904BD12A8E9B6A00A7DF8A /* SwiftProtobuf */,
 			);
 			productName = "macos-redirector";
-			productReference = CE7A86A72A8CFB86009E0B82 /* Mitmproxy Redirector.app */;
+			productReference = CE7A86A72A8CFB86009E0B82 /* Prompt Security Redirector.app */;
 			productType = "com.apple.product-type.application";
 		};
 		CE7A86BC2A8CFBAD009E0B82 /* network-extension */ = {
@@ -430,7 +430,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Mitmproxy Redirector";
+				INFOPLIST_KEY_CFBundleDisplayName = "Prompt Security Redirector";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -439,9 +439,9 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector";
-				PRODUCT_NAME = "Mitmproxy Redirector";
+				PRODUCT_NAME = "Prompt Security Redirector";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Redirector";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -465,7 +465,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Mitmproxy Redirector";
+				INFOPLIST_KEY_CFBundleDisplayName = "Prompt Security Redirector";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -474,9 +474,9 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector";
-				PRODUCT_NAME = "Mitmproxy Redirector";
+				PRODUCT_NAME = "Prompt Security Redirector";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Redirector";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -506,7 +506,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector.network-extension";
 				PRODUCT_NAME = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector Network Extension";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Redirector Network Extension";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "network-extension/libproc-Bridging-Header.h";
@@ -538,7 +538,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector.network-extension";
 				PRODUCT_NAME = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector Network Extension";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Redirector Network Extension";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "network-extension/libproc-Bridging-Header.h";
