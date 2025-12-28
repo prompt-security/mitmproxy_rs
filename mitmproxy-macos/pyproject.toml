@@ -21,5 +21,5 @@ pattern = "version = \"(?P<version>.+?)\""
 
 [tool.hatch.build.force-include]
 # "../target/release/macos-certificate-truster" = "mitmproxy_macos/macos-certificate-truster.app/Contents/MacOS/macos-certificate-truster"
-"./redirector/dist/Prompt Security Redirector.app.tar" = "mitmproxy_macos/Prompt Security Redirector.app.tar"
+"./redirector/dist/Mitmproxy Redirector.app.tar" = "mitmproxy_macos/Mitmproxy Redirector.app.tar"
 "../Cargo.toml" = "./version-info.toml"

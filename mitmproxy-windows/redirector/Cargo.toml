@@ -31,5 +31,5 @@ hex = "0.4.3"
 winres = "0.1.12"
 
 [package.metadata.winres]
-ProductName = "Prompt Security Redirector"
+ProductName = "Mitmproxy Redirector"
 FileDescription = "Transparently redirect traffic to a mitmproxy instance"

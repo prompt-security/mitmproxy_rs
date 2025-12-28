@@ -168,7 +168,7 @@ mod macos {
     use std::path::Path;
     use std::{env, fs};
 
-    /// Ensure "Prompt Security Redirector.app" is installed into /Applications and up-to-date.
+    /// Ensure "Mitmproxy Redirector.app" is installed into /Applications and up-to-date.
     pub(super) fn copy_redirector_app(
         py: &Python,
     ) -> PyResult<Option<impl FnOnce() -> Result<()>>> {
@@ -177,13 +177,13 @@ mod macos {
             return Ok(None);
         }
 
-        let info_plist = Path::new("/Applications/Prompt Security Redirector.app/Contents/Info.plist");
+        let info_plist = Path::new("/Applications/Mitmproxy Redirector.app/Contents/Info.plist");
         let redirector_tar = {
             let module_filename = py.import("mitmproxy_macos")?.filename()?;
             let path = Path::new(module_filename.to_str()?)
                 .parent()
                 .ok_or_else(|| anyhow::anyhow!("invalid path"))?
-                .join("Prompt Security Redirector.app.tar");
+                .join("Mitmproxy Redirector.app.tar");
             if !path.exists() {
                 return Err(anyhow::anyhow!("{} does not exist", path.display()).into());
             }
@@ -206,7 +206,7 @@ mod macos {
         Ok(Some(move || {
             let archive_file = fs::File::open(redirector_tar)?;
             let mut archive = tar::Archive::new(archive_file);
-            let destination_path = Path::new("/Applications/Prompt Security Redirector.app/");
+            let destination_path = Path::new("/Applications/Mitmproxy Redirector.app/");
             if destination_path.exists() {
                 // archive.unpack with overwrite does not work, so we do this.
                 fs::remove_dir_all(destination_path)

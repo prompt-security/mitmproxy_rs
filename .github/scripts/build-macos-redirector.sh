@@ -40,19 +40,19 @@ if [ -n "${APPLE_ID-}" ]; then
     --apple-id "$APPLE_ID" \
     --team-id "$APPLE_TEAM_ID" \
     --password "$APPLE_APP_PASSWORD"
-  ditto -c -k --keepParent "./build/Prompt Security Redirector.app" "./build/Prompt Security Redirector.zip"
+  ditto -c -k --keepParent "./build/Mitmproxy Redirector.app" "./build/Mitmproxy Redirector.zip"
   xcrun notarytool submit \
-    "./build/Prompt Security Redirector.zip" \
+    "./build/Mitmproxy Redirector.zip" \
     --keychain "$KEYCHAIN_PATH" \
     --keychain-profile "AC_PASSWORD" \
     --wait
-  xcrun stapler staple "./build/Prompt Security Redirector.app"
+  xcrun stapler staple "./build/Mitmproxy Redirector.app"
 
   mkdir -p dist
-  tar --create --file "./dist/Prompt Security Redirector.app.tar" --cd "./build" "Prompt Security Redirector.app"
+  tar --create --file "./dist/Mitmproxy Redirector.app.tar" --cd "./build" "Mitmproxy Redirector.app"
 else
   echo "Signing keys not available, building unsigned binary..."
   xcodebuild -scheme macos-redirector CODE_SIGNING_ALLOWED="NO" build
   mkdir -p dist
-  touch "dist/Prompt Security Redirector.app.tar"
+  touch "dist/Mitmproxy Redirector.app.tar"
 fi
