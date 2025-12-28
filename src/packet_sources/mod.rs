@@ -3,7 +3,6 @@ use crate::ipc::PacketWithMeta;
 use crate::messages::{
     NetworkCommand, NetworkEvent, SmolPacket, TransportCommand, TransportEvent, TunnelInfo,
 };
-use crate::network::add_network_layer;
 use crate::{ipc, shutdown, MAX_PACKET_SIZE};
 use anyhow::{anyhow, Context, Result};
 use prost::bytes::Bytes;
@@ -11,7 +10,8 @@ use prost::Message;
 use std::future::Future;
 use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::{Sender, UnboundedReceiver};
+use tokio::sync::mpsc::{Receiver, Sender, UnboundedReceiver};
+use tokio::task::JoinHandle;
 
 #[cfg(target_os = "linux")]
 pub mod linux;
@@ -44,25 +44,40 @@ pub trait PacketSourceTask: Send {
 
 pub const IPC_BUF_SIZE: usize = MAX_PACKET_SIZE + 1024;
 
+pub struct NetworkLayer {
+    pub task_handle: JoinHandle<Result<()>>,
+    pub tx: Sender<NetworkEvent>,
+    pub rx: Receiver<NetworkCommand>,
+}
+
 /// Feed packets from a socket into smol, and the other way around.
+///
+/// Returns an error when a disconnection is detected (empty read) or any I/O error occurs,
+/// allowing the caller to handle it (e.g., by attempting reconnection).
 #[allow(dead_code)]
 async fn forward_packets<T: AsyncRead + AsyncWrite + Unpin>(
     mut channel: T,
-    transport_events_tx: Sender<TransportEvent>,
-    transport_commands_rx: UnboundedReceiver<TransportCommand>,
-    mut conf_rx: UnboundedReceiver<InterceptConf>,
-    shutdown: shutdown::Receiver,
+    network: &mut NetworkLayer,
+    conf_rx: &mut UnboundedReceiver<InterceptConf>,
 ) -> Result<()> {
     let mut buf = Vec::with_capacity(IPC_BUF_SIZE);
-    let (mut network_task_handle, net_tx, mut net_rx) =
-        add_network_layer(transport_events_tx, transport_commands_rx, shutdown);
+
+    // Send initial InterceptConf immediately after connection.
+    // Without this, we have a deadlock: redirector waits for config, mitmproxy waits for packets.
+    // The redirector won't send packets until it gets a non-disabled config.
+    let initial_conf = InterceptConf::disabled();
+    let msg = ipc::FromProxy {
+        message: Some(ipc::from_proxy::Message::InterceptConf(initial_conf.into())),
+    };
+    msg.encode(&mut buf)?;
+    channel.write_all(&buf).await.context("failed to send initial configuration")?;
 
     loop {
         buf.clear();
         tokio::select! {
             // Monitor the network task for errors or planned shutdown.
             // This way we implicitly monitor the shutdown channel.
-            exit = &mut network_task_handle => break exit.context("network task panic")?.context("network task error")?,
+            exit = &mut network.task_handle => break exit.context("network task panic")?.context("network task error")?,
             // pipe through changes to the intercept list
             Some(conf) = conf_rx.recv() => {
                 let msg = ipc::FromProxy {
@@ -110,12 +125,12 @@ async fn forward_packets<T: AsyncRead + AsyncWrite + Unpin>(
                         remote_endpoint: None,
                     },
                 };
-                if net_tx.try_send(event).is_err() {
+                if network.tx.try_send(event).is_err() {
                     log::warn!("Dropping incoming packet, TCP channel is full.")
                 };
             },
             // write packets from the network stack to the IPC pipe to be reinjected.
-            Some(e) = net_rx.recv() => {
+            Some(e) = network.rx.recv() => {
                 match e {
                     NetworkCommand::SendPacket(packet) => {
                         let packet = ipc::FromProxy { message: Some(ipc::from_proxy::Message::Packet( ipc::Packet { data: Bytes::from(packet.into_inner()) }))};

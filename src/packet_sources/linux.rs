@@ -14,6 +14,7 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
 use crate::intercept_conf::InterceptConf;
 use crate::messages::{TransportCommand, TransportEvent};
+use crate::network::add_network_layer;
 use crate::packet_sources::{forward_packets, PacketSourceConf, PacketSourceTask};
 use crate::shutdown;
 use tempfile::{tempdir, TempDir};
@@ -113,6 +114,7 @@ async fn start_redirector(
 
 pub struct LinuxConf {
     pub executable_path: PathBuf,
+    pub max_reconnect_attempts: Option<u32>,
 }
 
 // We implement AsyncRead/AsyncWrite for UnixDatagram to have a common interface
@@ -168,24 +170,17 @@ impl PacketSourceConf for LinuxConf {
     ) -> Result<(Self::Task, Self::Data)> {
         let datagram_dir = tempdir().context("failed to create temp dir")?;
 
-        let channel = UnixDatagram::bind(datagram_dir.path().join("mitmproxy"))?;
-        let dst =
-            start_redirector(&self.executable_path, datagram_dir.path(), shutdown.clone()).await?;
-
-        channel
-            .connect(&dst)
-            .with_context(|| format!("Failed to connect to redirector at {}", dst.display()))?;
-
         let (conf_tx, conf_rx) = unbounded_channel();
 
         Ok((
             LinuxTask {
                 datagram_dir,
-                channel: AsyncUnixDatagram(channel),
+                executable_path: self.executable_path,
                 transport_events_tx,
                 transport_commands_rx,
                 conf_rx,
                 shutdown,
+                max_reconnect_attempts: self.max_reconnect_attempts,
             },
             conf_tx,
         ))
@@ -194,23 +189,153 @@ impl PacketSourceConf for LinuxConf {
 
 pub struct LinuxTask {
     datagram_dir: TempDir,
-    channel: AsyncUnixDatagram,
+    executable_path: PathBuf,
     transport_events_tx: Sender<TransportEvent>,
     transport_commands_rx: UnboundedReceiver<TransportCommand>,
     conf_rx: UnboundedReceiver<InterceptConf>,
     shutdown: shutdown::Receiver,
+    max_reconnect_attempts: Option<u32>,
 }
 
 impl PacketSourceTask for LinuxTask {
-    async fn run(self) -> Result<()> {
-        forward_packets(
-            self.channel,
+    async fn run(mut self) -> Result<()> {
+        use std::time::Duration;
+
+        // Create network layer once, before reconnection loop
+        let (task_handle, tx, rx) = add_network_layer(
             self.transport_events_tx,
             self.transport_commands_rx,
-            self.conf_rx,
-            self.shutdown,
-        )
-        .await?;
+            self.shutdown.clone(),
+        );
+        let mut network = crate::packet_sources::NetworkLayer {
+            task_handle,
+            tx,
+            rx,
+        };
+
+        let mut delay = Duration::from_secs(1);
+        let mut attempts = 0u32;
+
+        loop {
+            if self.shutdown.is_shutting_down() {
+                log::info!("Linux redirector shutting down");
+                break;
+            }
+
+            // Create new socket for this connection attempt
+            let channel = match UnixDatagram::bind(self.datagram_dir.path().join("mitmproxy")) {
+                Ok(ch) => ch,
+                Err(e) => {
+                    log::warn!("Failed to bind Unix datagram socket: {}", e);
+
+                    if let Some(max) = self.max_reconnect_attempts {
+                        attempts += 1;
+                        if attempts > max {
+                            drop(self.datagram_dir);
+                            return Err(anyhow!(
+                                "Failed to bind Unix datagram socket after {} attempts",
+                                max
+                            ));
+                        }
+                    }
+
+                    tokio::time::sleep(delay).await;
+                    delay = (delay * 2).min(Duration::from_secs(30));
+                    continue;
+                }
+            };
+
+            let dst = match start_redirector(
+                &self.executable_path,
+                self.datagram_dir.path(),
+                self.shutdown.clone(),
+            )
+            .await
+            {
+                Ok(dst) => dst,
+                Err(e) => {
+                    log::warn!("Failed to start Linux redirector: {}", e);
+
+                    if let Some(max) = self.max_reconnect_attempts {
+                        attempts += 1;
+                        if attempts > max {
+                            drop(self.datagram_dir);
+                            return Err(anyhow!(
+                                "Failed to start Linux redirector after {} attempts",
+                                max
+                            ));
+                        }
+                    }
+
+                    tokio::time::sleep(delay).await;
+                    delay = (delay * 2).min(Duration::from_secs(30));
+                    continue;
+                }
+            };
+
+            if let Err(e) = channel
+                .connect(&dst)
+                .with_context(|| format!("Failed to connect to redirector at {}", dst.display()))
+            {
+                log::warn!("{}", e);
+
+                if let Some(max) = self.max_reconnect_attempts {
+                    attempts += 1;
+                    if attempts > max {
+                        drop(self.datagram_dir);
+                        return Err(anyhow!(
+                            "Failed to connect to Linux redirector after {} attempts",
+                            max
+                        ));
+                    }
+                }
+
+                tokio::time::sleep(delay).await;
+                delay = (delay * 2).min(Duration::from_secs(30));
+                continue;
+            }
+
+            log::info!("Connected to Linux redirector");
+            attempts = 0;
+            delay = Duration::from_secs(1);
+
+            // Run packet forwarding until disconnection
+            match forward_packets(
+                AsyncUnixDatagram(channel),
+                &mut network,
+                &mut self.conf_rx,
+            )
+            .await
+            {
+                Ok(_) => {
+                    log::info!("Linux redirector exited normally");
+                    break;
+                }
+                Err(e) => {
+                    log::warn!("Redirector disconnected: {}", e);
+
+                    if let Some(max) = self.max_reconnect_attempts {
+                        attempts += 1;
+                        if attempts > max {
+                            drop(self.datagram_dir);
+                            return Err(anyhow!(
+                                "Failed to reconnect to Linux redirector after {} attempts",
+                                max
+                            ));
+                        }
+                    }
+
+                    log::info!(
+                        "Attempting to reconnect (attempt {}, waiting {}s)...",
+                        attempts + 1,
+                        delay.as_secs()
+                    );
+                    tokio::time::sleep(delay).await;
+                    delay = (delay * 2).min(Duration::from_secs(30));
+                }
+            }
+        }
+
         drop(self.datagram_dir);
         Ok(())
     }
