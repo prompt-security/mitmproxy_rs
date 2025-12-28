@@ -430,7 +430,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Mitmproxy Redirector";
+				INFOPLIST_KEY_CFBundleDisplayName = "Prompt Security Traffic Monitor";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -439,9 +439,9 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector";
-				PRODUCT_NAME = "Mitmproxy Redirector";
+				PRODUCT_NAME = "Prompt Security Traffic Monitor";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Traffic Monitor";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -465,7 +465,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Mitmproxy Redirector";
+				INFOPLIST_KEY_CFBundleDisplayName = "Prompt Security Traffic Monitor";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -474,9 +474,9 @@
 				);
 				MARKETING_VERSION = 2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector";
-				PRODUCT_NAME = "Mitmproxy Redirector";
+				PRODUCT_NAME = "Prompt Security Traffic Monitor";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Traffic Monitor";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -506,7 +506,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector.network-extension";
 				PRODUCT_NAME = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector Network Extension";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Traffic Monitor Network Extension";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "network-extension/libproc-Bridging-Header.h";
@@ -538,7 +538,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "org.mitmproxy.macos-redirector.network-extension";
 				PRODUCT_NAME = "$(inherited)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Mitmproxy Redirector Network Extension";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*]" = "Prompt Security Traffic Monitor Network Extension";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = "network-extension/libproc-Bridging-Header.h";
