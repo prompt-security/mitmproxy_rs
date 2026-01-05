@@ -54,20 +54,23 @@ pub struct NetworkLayer {
 ///
 /// Returns an error when a disconnection is detected (empty read) or any I/O error occurs,
 /// allowing the caller to handle it (e.g., by attempting reconnection).
+///
+/// `current_conf`: Mutable reference to the current InterceptConf. May be updated when config change event received,
+/// so caller can reuse it on reconnection.
 #[allow(dead_code)]
 async fn forward_packets<T: AsyncRead + AsyncWrite + Unpin>(
     mut channel: T,
     network: &mut NetworkLayer,
     conf_rx: &mut UnboundedReceiver<InterceptConf>,
+    current_conf: &mut InterceptConf,
 ) -> Result<()> {
     let mut buf = Vec::with_capacity(IPC_BUF_SIZE);
 
     // Send initial InterceptConf immediately after connection.
     // Without this, we have a deadlock: redirector waits for config, mitmproxy waits for packets.
     // The redirector won't send packets until it gets a non-disabled config.
-    let initial_conf = InterceptConf::disabled();
     let msg = ipc::FromProxy {
-        message: Some(ipc::from_proxy::Message::InterceptConf(initial_conf.into())),
+        message: Some(ipc::from_proxy::Message::InterceptConf((*current_conf).clone().into())),
     };
     msg.encode(&mut buf)?;
     channel.write_all(&buf).await.context("failed to send initial configuration")?;
@@ -80,6 +83,7 @@ async fn forward_packets<T: AsyncRead + AsyncWrite + Unpin>(
             exit = &mut network.task_handle => break exit.context("network task panic")?.context("network task error")?,
             // pipe through changes to the intercept list
             Some(conf) = conf_rx.recv() => {
+                *current_conf = conf.clone();
                 let msg = ipc::FromProxy {
                     message: Some(ipc::from_proxy::Message::InterceptConf(conf.into())),
                 };

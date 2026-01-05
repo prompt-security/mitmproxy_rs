@@ -403,11 +403,13 @@ async fn handle_ipc(
     tx: UnboundedSender<Event>,
 ) -> Result<()> {
     let mut buf = [0u8; IPC_BUF_SIZE];
+    info!("IPC handler started, beginning read loop");
     loop {
         tokio::select! {
             r = ipc.read(&mut buf) => {
                 match r {
                     Ok(len) if len > 0 => {
+                        info!("Received IPC message: {} bytes", len);
 
                         let mut cursor = Cursor::new(&buf[..len]);
                         let Ok(FromProxy { message: Some(message)}) = FromProxy::decode(&mut cursor) else {
@@ -417,9 +419,13 @@ async fn handle_ipc(
 
                         tx.send(Event::Ipc(message))?;
                     }
-                    _ => {
-                        info!("IPC read failed. Exiting.");
+                    Ok(len) => {
+                        warn!("IPC read returned 0 bytes. Exiting.");
                         std::process::exit(0);
+                    }
+                    Err(e) => {
+                        error!("IPC read error: {}. Exiting.", e);
+                        std::process::exit(1);
                     }
                 }
             },

@@ -121,6 +121,7 @@ impl PacketSourceTask for WindowsTask {
 
         let mut delay = Duration::from_secs(1);
         let mut attempts = 0u32;
+        let mut current_conf = InterceptConf::disabled();
 
         loop {
             if self.shutdown.is_shutting_down() {
@@ -201,11 +202,12 @@ impl PacketSourceTask for WindowsTask {
                 }
             }
 
-            // Run packet forwarding until disconnection
+            // Forward packets until disconnection. May update current_conf if new config arrives on conf_rx.
             match forward_packets(
                 ipc_server,
                 &mut network_layer,
                 &mut self.conf_rx,
+                &mut current_conf,
             )
             .await
             {
