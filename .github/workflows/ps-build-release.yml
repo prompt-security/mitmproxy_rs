@@ -1,0 +1,79 @@
+name: PS Build & Release
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            os: windows-latest
+          - name: macos-universal
+            os: macos-latest
+            target: aarch64-apple-darwin x86_64-apple-darwin
+            args: --target universal2-apple-darwin
+    runs-on: ${{ matrix.os }}
+    name: build mitmproxy-rs (${{ matrix.name }})
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup default stable
+
+      - name: Add macOS cross-compilation targets
+        if: matrix.target
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build wheel
+        run: maturin build --release ${{ matrix.args }}
+        working-directory: ./mitmproxy-rs
+
+      - name: Verify wheel version
+        run: |
+          pip install --no-deps target/wheels/*.whl
+          python -c "
+          import sys, os
+          from importlib.metadata import version
+          VERSION = version('mitmproxy_rs')
+          tag = os.environ['GITHUB_REF_NAME']
+          if not tag.startswith('ps-'):
+              print(f'Tag {tag} does not match ps-* format'); sys.exit(1)
+          expected = tag.removeprefix('ps-').rsplit('-',1)[0].lstrip('v')
+          pkg_ver = VERSION.split('+')[0]
+          if pkg_ver != expected:
+              print(f'VERSION MISMATCH: wheel has {VERSION}, tag is {tag} (expected base version {expected})')
+              sys.exit(1)
+          print(f'Version OK: {VERSION} matches tag {tag}')
+          "
+
+      - name: Upload wheel to release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "mitmproxy_rs ps fork ${{ github.ref_name }}"
+          body: |
+            Prompt Security patched build of mitmproxy_rs.
+            Tag: `${{ github.ref_name }}`
+            Commit: `${{ github.sha }}`
+            Branch: `${{ github.event.release.target_commitish }}`
+          fail_on_unmatched_files: true
+          files: target/wheels/*.whl
