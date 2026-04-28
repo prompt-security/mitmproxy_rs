@@ -48,6 +48,22 @@ jobs:
         run: maturin build --release ${{ matrix.args }}
         working-directory: ./mitmproxy-rs
 
+      - name: Verify wheel version
+        run: |
+          pip install --no-deps target/wheels/*.whl
+          python -c "
+          import sys, os
+          from importlib.metadata import version
+          VERSION = version('mitmproxy_rs')
+          tag = os.environ['GITHUB_REF_NAME']
+          expected = tag.split('ps-v')[1].rsplit('-',1)[0]
+          pkg_ver = VERSION.split('+')[0]
+          if pkg_ver != expected:
+              print(f'VERSION MISMATCH: wheel has {VERSION}, tag is {tag} (expected base version {expected})')
+              sys.exit(1)
+          print(f'Version OK: {VERSION} matches tag {tag}')
+          "
+
       - name: Upload wheel to release
         uses: softprops/action-gh-release@v2
         with:
