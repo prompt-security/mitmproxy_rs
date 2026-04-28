@@ -130,10 +130,12 @@ impl PacketSourceTask for WindowsTask {
             }
 
             // Spawn the redirector process
-            log::debug!("Starting redirector: {} {}", 
+            log::debug!(
+                "Starting redirector: {} {}",
                 String::from_utf16_lossy(&self.executable_path).trim_end_matches('\0'),
-                String::from_utf16_lossy(&self.pipe_name).trim_end_matches('\0'));
-            
+                String::from_utf16_lossy(&self.pipe_name).trim_end_matches('\0')
+            );
+
             start_redirector(&self.executable_path, &self.pipe_name);
 
             // Create the named pipe for this connection
