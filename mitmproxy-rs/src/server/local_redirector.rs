@@ -115,7 +115,7 @@ pub fn start_local_redirector(
         }
         let conf = WindowsConf {
             executable_path,
-            max_reconnect_attempts: None,
+            max_reconnect_attempts,
         };
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let (server, conf_tx) =
@@ -133,7 +133,10 @@ pub fn start_local_redirector(
         if !executable_path.exists() {
             return Err(anyhow::anyhow!("{} does not exist", executable_path.display()).into());
         }
-        let conf = LinuxConf { executable_path };
+        let conf = LinuxConf {
+            executable_path,
+            max_reconnect_attempts,
+        };
         pyo3_async_runtimes::tokio::future_into_py(py, async move {
             let (server, conf_tx) =
                 Server::init(conf, handle_tcp_stream, handle_udp_stream).await?;

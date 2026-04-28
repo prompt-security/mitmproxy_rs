@@ -7,6 +7,7 @@ from . import Stream
 async def start_local_redirector(
     handle_tcp_stream: Callable[[Stream], Awaitable[None]],
     handle_udp_stream: Callable[[Stream], Awaitable[None]],
+    max_reconnect_attempts: int | None = None,
 ) -> LocalRedirector: ...
 @final
 class LocalRedirector:

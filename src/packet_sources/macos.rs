@@ -120,7 +120,9 @@ pub struct MacOsTask {
 impl PacketSourceTask for MacOsTask {
     async fn run(mut self) -> Result<()> {
         log::info!("Waiting for macOS System Extension to connect...");
-        let mut control_channel = self.reconnect_control_channel().await
+        let mut control_channel = self
+            .reconnect_control_channel()
+            .await
             .context("Failed to establish initial control channel")?;
 
         loop {
@@ -200,7 +202,9 @@ impl PacketSourceTask for MacOsTask {
 }
 
 impl MacOsTask {
-    async fn reconnect_control_channel(&mut self) -> Result<Framed<UnixStream, LengthDelimitedCodec>> {
+    async fn reconnect_control_channel(
+        &mut self,
+    ) -> Result<Framed<UnixStream, LengthDelimitedCodec>> {
         let mut delay = Duration::from_secs(1);
         let mut attempts = 0u32;
         loop {
@@ -209,19 +213,32 @@ impl MacOsTask {
 
             if let Some(max) = self.max_reconnect_attempts {
                 if attempts > max {
-                    bail!("Failed to reconnect to macOS System Extension after {} attempts", max);
+                    bail!(
+                        "Failed to reconnect to macOS System Extension after {} attempts",
+                        max
+                    );
                 }
             }
 
-            log::info!("Attempting to connect to macOS System Extension (attempt {}, waiting {}s)...", attempts, delay.as_secs());
+            log::info!(
+                "Attempting to connect to macOS System Extension (attempt {}, waiting {}s)...",
+                attempts,
+                delay.as_secs()
+            );
 
             // Tell the extension to connect by spawning the redirector app
             if let Err(e) = start_redirector(self.listener_addr.clone()).await {
-                log::warn!("Failed to start redirector on attempt {}: {:?}", attempts, e);
+                log::warn!(
+                    "Failed to start redirector on attempt {}: {:?}",
+                    attempts,
+                    e
+                );
                 // Continue with exponential backoff even if redirector fails
             }
 
-            if let Ok(Ok((stream, _))) = timeout(Duration::from_secs(5), self.listener.accept()).await {
+            if let Ok(Ok((stream, _))) =
+                timeout(Duration::from_secs(5), self.listener.accept()).await
+            {
                 log::info!("Successfully connected to macOS System Extension");
                 return Ok(Framed::new(stream, LengthDelimitedCodec::new()));
             }

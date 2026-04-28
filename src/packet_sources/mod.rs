@@ -70,10 +70,15 @@ async fn forward_packets<T: AsyncRead + AsyncWrite + Unpin>(
     // Without this, we have a deadlock: redirector waits for config, mitmproxy waits for packets.
     // The redirector won't send packets until it gets a non-disabled config.
     let msg = ipc::FromProxy {
-        message: Some(ipc::from_proxy::Message::InterceptConf((*current_conf).clone().into())),
+        message: Some(ipc::from_proxy::Message::InterceptConf(
+            (*current_conf).clone().into(),
+        )),
     };
     msg.encode(&mut buf)?;
-    channel.write_all(&buf).await.context("failed to send initial configuration")?;
+    channel
+        .write_all(&buf)
+        .await
+        .context("failed to send initial configuration")?;
 
     loop {
         buf.clear();
