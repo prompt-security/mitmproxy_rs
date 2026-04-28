@@ -1,0 +1,23 @@
+mitmproxy-rs/src/server/local_redirector.rs
+  3b1286367ba643a1 118,136
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "c99c67a11a15b7bdb1d4163b67163227504ec8c3",
+  "prompts": {
+    "3b1286367ba643a1": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "ba5311ff-5d40-4f0b-b4b8-25ec197d6a28",
+        "model": "copilot/claude-opus-4.6"
+      },
+      "human_author": "Vitaly Neyman",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
