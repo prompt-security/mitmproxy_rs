@@ -1,0 +1,14 @@
+Cargo.toml
+  h_8ba19f197da2c7 31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "244ade29efb4b8c7eb1f9074def883f4c98a3e48",
+  "prompts": {},
+  "humans": {
+    "h_8ba19f197da2c7": {
+      "author": "Vitaly Neyman"
+    }
+  }
+}
