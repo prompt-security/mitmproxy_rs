@@ -48,6 +48,14 @@ jobs:
         run: maturin build --release ${{ matrix.args }}
         working-directory: ./mitmproxy-rs
 
+      # The Windows redirector ships in its own wheel (mitmproxy_windows); without this, ps-agent gets upstream's from PyPI.
+      - name: Build mitmproxy-windows wheel
+        if: runner.os == 'Windows'
+        run: |
+          cargo build --release --package windows-redirector
+          pip install build
+          python -m build --wheel ./mitmproxy-windows --outdir target/wheels/
+
       - name: Upload wheel to release
         uses: softprops/action-gh-release@v2
         with:
