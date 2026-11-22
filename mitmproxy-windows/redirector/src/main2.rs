@@ -110,7 +110,7 @@ async fn main() -> Result<()> {
     // let _icmp_handle = WinDivert::new("icmp", WinDivertLayer::Network, 1042, WinDivertFlags::new().set_drop()).context("Error opening WinDivert handle")?;
 
     let socket_handle = WinDivert::socket(
-        "tcp,
+        "tcp",
         1041,
         WinDivertFlags::new().set_recv_only().set_sniff(),
     )?;
