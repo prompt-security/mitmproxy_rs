@@ -109,13 +109,15 @@ async fn main() -> Result<()> {
     // only needed for forward mode
     // let _icmp_handle = WinDivert::new("icmp", WinDivertLayer::Network, 1042, WinDivertFlags::new().set_drop()).context("Error opening WinDivert handle")?;
 
+    // Socket events must cover every connection the network filter diverts, or its packets wait for an event that never comes.
     let socket_handle = WinDivert::socket(
-        "tcp",
+        "tcp || udp",
         1041,
         WinDivertFlags::new().set_recv_only().set_sniff(),
     )?;
     // WinDivert's syntax supports IP ranges (https://github.com/basil00/Divert/issues/250#issuecomment-723515347)
-    let wd_net_filter = "!loopback && ((ip && remoteAddr < 224.0.0.0) || (ipv6 && remoteAddr < ff00::)) && tcp";
+    // Only port 443 (HTTPS and QUIC), TCP and UDP: other ports, plain HTTP included, go out untouched.
+    let wd_net_filter = "!loopback && ((ip && remoteAddr < 224.0.0.0) || (ipv6 && remoteAddr < ff00::)) && remotePort == 443 && (tcp || udp)";
     let network_handle = WinDivert::network(wd_net_filter, 1040, WinDivertFlags::new())?;
     let inject_handle = WinDivert::network("false", 1039, WinDivertFlags::new().set_send_only())?;
 
